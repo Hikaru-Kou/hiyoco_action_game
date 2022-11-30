@@ -6,9 +6,9 @@ import sys
 
 SCR_RECT = Rect(0, 0, 640, 480)
 GS = 32
-DOWN = 1
-LEFT = 4
-RIGHT = 5
+DOWN,LEFT,RIGHT= 1,4,5
+
+
 class PyAction:
     def __init__(self):
         pygame.init()
@@ -55,8 +55,10 @@ class Character(pygame.sprite.Sprite):
     animycle = 12
     frame = 0
     MOVE_SPEED = 5.0  # 移動速度
+    JUMP_SPEED = 8.0
+    GRAVITY = 0.2
     direction = RIGHT
-
+    
     
     def __init__(self,filename,x,y):
         pygame.sprite.Sprite.__init__(self, self.containers)
@@ -70,6 +72,10 @@ class Character(pygame.sprite.Sprite):
         self.fpy = float(self.rect.y)
         self.fpvx = 0.0
         self.fpvy = 0.0
+
+        #地面にいるか？
+        self.on_floor = False
+
 
     def update(self):
         """スプライトの更新"""
@@ -95,16 +101,33 @@ class Character(pygame.sprite.Sprite):
 
             if self.direction == LEFT:
                 self.image = self.images[13]
-            self.fpvx = 0.0
 
+            self.fpvx = 0.0
+        
+        #ジャンプ
+        if pressed_keys[K_UP] or pressed_keys[K_SPACE]:
+            if self.on_floor:
+                self.fpvy = -self.JUMP_SPEED
+                self.on_floor = False
+
+        # 速度を更新
+        if not self.on_floor:
+            self.fpvy += self.GRAVITY  # 下向きに重力をかける
         # 浮動小数点の位置を更新
         self.fpx += self.fpvx
+        self.fpy += self.fpvy
 
+        # 着地したか調べる
+        if self.fpy > SCR_RECT.height - self.rect.height:
+            self.fpy = SCR_RECT.height - self.rect.height  # 床にめり込まないように位置調整
+            self.fpvy = 0
+            self.on_floor = True
+            
         # 浮動小数点の位置を整数座標に戻す
         # スプライトを動かすにはself.rectの更新が必要！
         self.rect.x = int(self.fpx)
         self.rect.y = int(self.fpy)
-
+        
 
 def load_image(filename, colorkey=None):
     """画像をロードして画像と矩形を返す"""
