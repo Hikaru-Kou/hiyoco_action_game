@@ -6,8 +6,9 @@ import sys
 
 SCR_RECT = Rect(0, 0, 640, 480)
 GS = 32
-DOWN,LEFT,RIGHT,UP = 0,1,2,3
-
+DOWN = 1
+LEFT = 4
+RIGHT = 5
 class PyAction:
     def __init__(self):
         pygame.init()
@@ -19,7 +20,6 @@ class PyAction:
 
         # 画像のロード
         player = Character("hiyoco.png",0,0)               
-        #Character.right_image = split_image(load_image("hiyoco.png", -1))    # 右向き
 
         # メインループ
         clock = pygame.time.Clock()
@@ -55,8 +55,9 @@ class Character(pygame.sprite.Sprite):
     animycle = 12
     frame = 0
     MOVE_SPEED = 5.0  # 移動速度
-    direction = DOWN
+    direction = RIGHT
 
+    
     def __init__(self,filename,x,y):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.images = split_image(load_image(filename))
@@ -74,8 +75,6 @@ class Character(pygame.sprite.Sprite):
         """スプライトの更新"""
          # キャラクターアニメーション
         self.frame += 1
-        self.image = self.images[int(self.direction * 4 + self.frame / self.animycle%4)]
-
         # キー入力取得
         pressed_keys = pygame.key.get_pressed()
 
@@ -83,10 +82,19 @@ class Character(pygame.sprite.Sprite):
         if pressed_keys[K_RIGHT]:
             self.direction = RIGHT
             self.fpvx = self.MOVE_SPEED
+            self.image = self.images[int(self.direction * 3 + self.frame / self.animycle%3)]
+            
         elif pressed_keys[K_LEFT]:
             self.direction = LEFT
             self.fpvx = -self.MOVE_SPEED
+            self.image = self.images[int(self.direction * 3 + self.frame / self.animycle%3)]
+            
         else:
+            if self.direction == RIGHT:
+                self.image = self.images[16]
+
+            if self.direction == LEFT:
+                self.image = self.images[13]
             self.fpvx = 0.0
 
         # 浮動小数点の位置を更新
@@ -96,6 +104,7 @@ class Character(pygame.sprite.Sprite):
         # スプライトを動かすにはself.rectの更新が必要！
         self.rect.x = int(self.fpx)
         self.rect.y = int(self.fpy)
+
 
 def load_image(filename, colorkey=None):
     """画像をロードして画像と矩形を返す"""
@@ -113,7 +122,7 @@ def load_image(filename, colorkey=None):
     return image
 
 def split_image(image):
-    """128x128のキャラクターイメージを32x32の16枚のイメージに分割
+    """96x192のキャラクターイメージを32x32の18のイメージに分割
     分割したイメージを格納したリストを返す"""
     imageList = []
     for i in range(0, 96, GS):
