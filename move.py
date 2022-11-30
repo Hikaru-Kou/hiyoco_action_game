@@ -13,7 +13,7 @@ class PyAction:
         pygame.display.set_caption("左右移動")
 
         # 画像のロード
-        Python.left_image = load_image("python.png", -1)                     # 左向き
+        Python.left_image = load_image("hiyoco.png", -1)                     # 左向き
         Python.right_image = pygame.transform.flip(Python.left_image, 1, 0)  # 右向き
 
         # オブジェクとグループと蛇の作成
@@ -69,7 +69,6 @@ class Python(pygame.sprite.Sprite):
         """スプライトの更新"""
         # キー入力取得
         pressed_keys = pygame.key.get_pressed()
-
         # 左右移動
         if pressed_keys[K_RIGHT]:
             self.image = self.right_image
@@ -88,6 +87,13 @@ class Python(pygame.sprite.Sprite):
         self.rect.x = int(self.fpx)
         self.rect.y = int(self.fpy)
 
+    
+    #def update(self):
+        #キャラクターアニメーション
+    #    self.frame += 1
+    #    self.image = self.images[int(self.frame/self.animcycle%4)]
+
+
 def load_image(filename, colorkey=None):
     """画像をロードして画像と矩形を返す"""
     filename = os.path.join("data", filename)
@@ -102,6 +108,18 @@ def load_image(filename, colorkey=None):
             colorkey = image.get_at((0,0))
         image.set_colorkey(colorkey, RLEACCEL)
     return image
+
+def split_image(image):
+    """32x128のキャラクターイメージを32x32の4枚のイメージに分割
+    分割したイメージを格納したリストを返す"""
+    imageList = []
+    for i in range(0, 192, 96):
+        surface = pygame.Surface((32,32))
+        surface.blit(image, (0,0), (i,0,32,32))
+        surface.set_colorkey(surface.get_at((0,0)), RLEACCEL)
+        surface.convert()
+        imageList.append(surface)
+    return imageList
 
 if __name__ == "__main__":
     PyAction()
