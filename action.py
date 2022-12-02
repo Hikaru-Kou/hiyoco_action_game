@@ -8,7 +8,6 @@ SCR_RECT = Rect(0, 0, 640, 480)
 GS = 32
 DOWN,LEFT,RIGHT= 1,4,5
 
-
 class PyAction:
     def __init__(self):
         pygame.init()
@@ -26,7 +25,6 @@ class PyAction:
         Character("hiyoco.png",(300,200),self.blocks)
         Block.image = load_image("block.png", -1)
 
-        self.all = pygame.sprite.RenderUpdates()
         #self.blocks = pygame.sprite.Group()
         
         # ブロックの作成
@@ -60,6 +58,7 @@ class PyAction:
                 pygame.quit()
                 sys.exit()
 
+    
     def create_blocks(self):
     # 天井と床
         for x in range(20):
@@ -95,12 +94,11 @@ class Character(pygame.sprite.Sprite):
     frame = 0
     MOVE_SPEED = 5.0  # 移動速度
     JUMP_SPEED = 8.0
-    GRAVITY = 0.2
+    GRAVITY = 0.25
     direction = RIGHT
     
-    
     def __init__(self,filename,pos,blocks):
-        
+
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.images = split_image(load_image(filename))
         self.image = self.images[0]
@@ -118,7 +116,6 @@ class Character(pygame.sprite.Sprite):
         #地面にいるか？
         self.on_floor = False
 
-
     def update(self):
         """スプライトの更新"""
          # キャラクターアニメーション
@@ -126,14 +123,13 @@ class Character(pygame.sprite.Sprite):
         # キー入力取得
         pressed_keys = pygame.key.get_pressed()
 
-        print("hello")
         # 左右移動
-        if pressed_keys[K_RIGHT]:
+        if pressed_keys[K_RIGHT] or pressed_keys[K_d]:
             self.direction = RIGHT
             self.fpvx = self.MOVE_SPEED
             self.image = self.images[int(self.direction * 3 + self.frame / self.animycle%3)]
             
-        elif pressed_keys[K_LEFT]:
+        elif pressed_keys[K_LEFT] or pressed_keys[K_a]:
             self.direction = LEFT
             self.fpvx = -self.MOVE_SPEED
             self.image = self.images[int(self.direction * 3 + self.frame / self.animycle%3)]
