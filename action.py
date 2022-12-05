@@ -95,7 +95,7 @@ class Character(pygame.sprite.Sprite):
     MOVE_SPEED = 5.0  # 移動速度
     JUMP_SPEED = 8.0
     GRAVITY = 0.25
-    direction = RIGHT
+    direction = DOWN
     
     def __init__(self,filename,pos,blocks):
 
@@ -120,6 +120,8 @@ class Character(pygame.sprite.Sprite):
         """スプライトの更新"""
          # キャラクターアニメーション
         self.frame += 1
+        #慣性力(x軸方向)
+        inertia = 0.25
         # キー入力取得
         pressed_keys = pygame.key.get_pressed()
 
@@ -137,11 +139,18 @@ class Character(pygame.sprite.Sprite):
         else:
             if self.direction == RIGHT:
                 self.image = self.images[16]
+                self.fpvx = self.fpvx - inertia
+                if self.fpvx <= 0:
+                    self.fpvx = 0
+                    self.direction = DOWN
+
 
             if self.direction == LEFT:
                 self.image = self.images[13]
-
-            self.fpvx = 0.0
+                self.fpvx = self.fpvx + inertia
+                if self.fpvx >= 0:
+                    self.fpvx = 0
+                    self.direction = DOWN
         
         #ジャンプ
         if pressed_keys[K_UP] or pressed_keys[K_SPACE]:
