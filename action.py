@@ -93,7 +93,7 @@ class Character(pygame.sprite.Sprite):
     animycle = 12
     frame = 0
     MOVE_SPEED = 5.0  # 移動最大速度
-    MOVE_ACCEL = 0.5
+    MOVE_ACCEL = 0.3
     JUMP_SPEED = 8.0
     GRAVITY = 0.25
     direction = DOWN
@@ -122,7 +122,7 @@ class Character(pygame.sprite.Sprite):
          # キャラクターアニメーション
         self.frame += 1
         #慣性力(x軸方向)
-        inertia = 0.15
+        inertia = 0.3
         # キー入力取得
         pressed_keys = pygame.key.get_pressed()
 
@@ -131,12 +131,16 @@ class Character(pygame.sprite.Sprite):
             self.direction = RIGHT
             if self.fpvx <= self.MOVE_SPEED:
                 self.fpvx = self.fpvx + self.MOVE_ACCEL
+                if self.fpvx >= self.MOVE_SPEED:
+                    self.fpvx = self.MOVE_SPEED
             self.image = self.images[int(self.direction * 3 + self.frame / self.animycle%3)]
             
         elif pressed_keys[K_LEFT] or pressed_keys[K_a]:
             self.direction = LEFT
             if self.fpvx >= - self.MOVE_SPEED:
                 self.fpvx = self.fpvx - self.MOVE_ACCEL
+                if self.fpvx <= -self.MOVE_SPEED:
+                    self.fpvx = -self.MOVE_SPEED
             #self.fpvx = -self.MOVE_SPEED
             self.image = self.images[int(self.direction * 3 + self.frame / self.animycle%3)]
             
