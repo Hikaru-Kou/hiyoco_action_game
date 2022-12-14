@@ -20,15 +20,16 @@ class PyAction:
         Character.containers = self.all
         Block.containers = self.all, self.blocks
 
-
         # 画像のロード
         Character("hiyoco.png",(300,200),self.blocks)
         Block.image = load_image("block.png", -1)
 
+        self.map = Map("data/test.map")
+
         #self.blocks = pygame.sprite.Group()
         
         # ブロックの作成
-        self.create_blocks()
+        #self.create_blocks()
 
         # メインループ
         clock = pygame.time.Clock()
@@ -45,8 +46,12 @@ class PyAction:
 
     def draw(self, screen):
         """スプライトの描画"""
-        screen.fill((0,0,0))
-        self.all.draw(screen)
+        #スプライトをマップサーフェイスに描画
+        #この時点では、画面に表示されない
+
+        self.map.draw()
+
+        screen.blit(self.map.surface, (0,0), (0,0,SCR_RECT.width, SCR_RECT.height))
 
     def key_handler(self):
         """キー入力処理"""
@@ -57,37 +62,6 @@ class PyAction:
             elif event.type == KEYDOWN and event.key == K_ESCAPE:
                 pygame.quit()
                 sys.exit()
-
-    
-    def create_blocks(self):
-    # 天井と床
-        for x in range(20):
-            Block((x*32, 0))
-            Block((x*32, 14*32))
-
-        # 左右の壁
-        for y in range(20):
-            Block((0, y*32))
-            Block((19*32, y*32))
-
-        # 中央のトンネル
-        Block((192,384)); Block((224,384)); Block((256,384))
-        Block((288,384)); Block((320,384)); Block((352,384))
-
-        # 右下にある山
-        Block((480,416)); Block((512,416)); Block((544,416)); Block((576,416))
-        Block((512,384)); Block((544,384)); Block((576,384))
-        Block((544,352)); Block((576,352))
-        Block((576,320))
-
-        # 左下から右上への階段
-        Block((32,384));  Block((128,320)); Block((224,256)); Block((384,192))
-        Block((416,192)); Block((448,192)); Block((480,192))
-        Block((512,192)); Block((544,192)); Block((576,192))
-
-        # 左上のブロック
-        Block((128, 128))
-    
 
 class Character(pygame.sprite.Sprite):
     animycle = 12
@@ -264,7 +238,50 @@ class Block(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.rect = self.image.get_rect()
         self.rect.topleft = pos
+
+class Map:
+    """マップ（プレイヤーや内部のスプライトを含む)"""
+    GS = 32 #グリッドサイズ
+
+    def __init__(self,filename):
+        #スプライトグループの登録
+        self.all = pygame.sprite.RenderUpdates()
+        self.blocks = pygame.sprite.Group()
+
+        #マップをロードしてマップ内スプライトの作成
+        self.load(filename)
+
+        #マップサーフェイスを作成
+        self.surface = pygame.Surface((self.col * self.GS, self.row * self.GS)).convert()
     
+    def draw(self):
+        """マップサーフェイスにマップナイスプライを描画"""
+        self.surface.fill((0,0,0))
+        self.all.draw(self.surface)
+
+    def update(self):
+        """マップ内スプライトを更新"""
+        self.all.update()
+
+    def load(self,filename):
+        """マップをロードしてスプライトを作成"""
+        map = []
+        fp = open(filename, "r")
+        for line in fp:
+            line = line.rstrip()  # 改行除去
+            map.append(list(line))
+            self.row = len(map)
+            self.col = len(map[0])
+        self.width = self.col * self.GS
+        self.height = self.row * self.GS
+        fp.close()
+
+        # マップからスプライトを作成
+        for i in range(self.row):
+            for j in range(self.col):
+                if map[i][j] == 'B':
+                    Block((j*self.GS, i*self.GS))  # ブロック
+
 def load_image(filename, colorkey=None):
     """画像をロードして画像と矩形を返す"""
     filename = os.path.join("data", filename)
