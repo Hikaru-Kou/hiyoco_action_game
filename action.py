@@ -12,23 +12,13 @@ class PyAction:
     def __init__(self):
         pygame.init()
         screen = pygame.display.set_mode(SCR_RECT.size)
-        pygame.display.set_caption("マップブロック作成")
+        pygame.display.set_caption("マップファイル読み込み")
 
-        # スプライトグループの作成
-        self.all = pygame.sprite.RenderUpdates()
-        self.blocks = pygame.sprite.Group()
-        Character.containers = self.all
-        Block.containers = self.all, self.blocks
-
-
-        # 画像のロード
-        Character("hiyoco.png",(300,200),self.blocks)
+        # ブロック画像のロード
         Block.image = load_image("block.png", -1)
 
-        #self.blocks = pygame.sprite.Group()
-        
-        # ブロックの作成
-        self.create_blocks()
+        # マップのロード
+        self.map = Map("data/test.map")
 
         # メインループ
         clock = pygame.time.Clock()
@@ -41,12 +31,27 @@ class PyAction:
 
     def update(self):
         """スプライトの更新"""
-        self.all.update()
+        self.map.update()
 
     def draw(self, screen):
-        """スプライトの描画"""
-        screen.fill((0,0,0))
-        self.all.draw(screen)
+        self.map.draw()
+
+        #オフセットに基づいてマップの一部を画面に描画
+        offsetx, offsety = self.map.calc_offset()
+
+        # 端ではスクロールしない
+        if offsetx < 0:
+            offsetx = 0
+        elif offsetx > self.map.width - SCR_RECT.width:
+            offsetx = self.map.width - SCR_RECT.width
+
+        if offsety < 0:
+            offsety = 0
+        elif offsety > self.map.height - SCR_RECT.height:
+            offsety = self.map.height - SCR_RECT.height
+
+        # マップの一部を画面に描画
+        screen.blit(self.map.surface, (0,0), (offsetx, offsety, SCR_RECT.width, SCR_RECT.height))
 
     def key_handler(self):
         """キー入力処理"""
@@ -57,37 +62,6 @@ class PyAction:
             elif event.type == KEYDOWN and event.key == K_ESCAPE:
                 pygame.quit()
                 sys.exit()
-
-    
-    def create_blocks(self):
-    # 天井と床
-        for x in range(20):
-            Block((x*32, 0))
-            Block((x*32, 14*32))
-
-        # 左右の壁
-        for y in range(20):
-            Block((0, y*32))
-            Block((19*32, y*32))
-
-        # 中央のトンネル
-        Block((192,384)); Block((224,384)); Block((256,384))
-        Block((288,384)); Block((320,384)); Block((352,384))
-
-        # 右下にある山
-        Block((480,416)); Block((512,416)); Block((544,416)); Block((576,416))
-        Block((512,384)); Block((544,384)); Block((576,384))
-        Block((544,352)); Block((576,352))
-        Block((576,320))
-
-        # 左下から右上への階段
-        Block((32,384));  Block((128,320)); Block((224,256)); Block((384,192))
-        Block((416,192)); Block((448,192)); Block((480,192))
-        Block((512,192)); Block((544,192)); Block((576,192))
-
-        # 左上のブロック
-        Block((128, 128))
-    
 
 class Character(pygame.sprite.Sprite):
     animycle = 12
@@ -170,12 +144,6 @@ class Character(pygame.sprite.Sprite):
         if not self.on_floor:
             self.fpvy += self.GRAVITY  # 下向きに重力をかける
 
-        print(self.fpvx)
-        """
-        # 浮動小数点の位置を更新
-        self.fpx += self.fpvx
-        self.fpy += self.fpvy
-        """
 
         """
         # 着地したか調べる
@@ -264,7 +232,62 @@ class Block(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.rect = self.image.get_rect()
         self.rect.topleft = pos
+
+class Map:
+    """マップ（プレイヤーや内部のスプライトを含む)"""
+    GS = 32 #グリッドサイズ
+
+    def __init__(self,filename):
+        #スプライトグループの登録
+        self.all = pygame.sprite.RenderUpdates()
+        self.blocks = pygame.sprite.Group()
+        Character.containers = self.all
+        Block.containers = self.all, self.blocks
+
+        #プレイヤーの作成
+        self.Character = Character("hiyoco.png",(300,200),self.blocks)
+
+        #マップをロードしてマップ内スプライトの作成
+        self.load(filename)
+
+        #マップサーフェイスを作成
+        self.surface = pygame.Surface((self.col * self.GS, self.row * self.GS)).convert()
     
+    def draw(self):
+        """マップサーフェイスにマップナイスプライを描画"""
+        self.surface.fill((0,0,0))
+        self.all.draw(self.surface)
+
+    def update(self):
+        """マップ内スプライトを更新"""
+        self.all.update()
+
+    def calc_offset(self):
+        """オフセットを計算"""
+        offsetx = self.Character.rect.topleft[0] - SCR_RECT.width/2
+        offsety = self.Character.rect.topleft[1] - SCR_RECT.height/2
+        print(offsetx,offsety)
+        return offsetx, offsety
+
+    def load(self,filename):
+        """マップをロードしてスプライトを作成"""
+        map = []
+        fp = open(filename, "r")
+        for line in fp:
+            line = line.rstrip()  # 改行除去
+            map.append(list(line))
+            self.row = len(map)
+            self.col = len(map[0])
+        self.width = self.col * self.GS
+        self.height = self.row * self.GS
+        fp.close()
+
+        # マップからスプライトを作成
+        for i in range(self.row):
+            for j in range(self.col):
+                if map[i][j] == 'B':
+                    Block((j*self.GS, i*self.GS))  # ブロック
+
 def load_image(filename, colorkey=None):
     """画像をロードして画像と矩形を返す"""
     filename = os.path.join("data", filename)
