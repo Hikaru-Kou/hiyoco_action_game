@@ -12,24 +12,13 @@ class PyAction:
     def __init__(self):
         pygame.init()
         screen = pygame.display.set_mode(SCR_RECT.size)
-        pygame.display.set_caption("マップブロック作成")
+        pygame.display.set_caption("マップファイル読み込み")
 
-        # スプライトグループの作成
-        self.all = pygame.sprite.RenderUpdates()
-        self.blocks = pygame.sprite.Group()
-        Character.containers = self.all
-        Block.containers = self.all, self.blocks
-
-        # 画像のロード
-        Character("hiyoco.png",(300,200),self.blocks)
+        # ブロック画像のロード
         Block.image = load_image("block.png", -1)
 
+        # マップのロード
         self.map = Map("data/test.map")
-
-        #self.blocks = pygame.sprite.Group()
-        
-        # ブロックの作成
-        #self.create_blocks()
 
         # メインループ
         clock = pygame.time.Clock()
@@ -42,16 +31,27 @@ class PyAction:
 
     def update(self):
         """スプライトの更新"""
-        self.all.update()
+        self.map.update()
 
     def draw(self, screen):
-        """スプライトの描画"""
-        #スプライトをマップサーフェイスに描画
-        #この時点では、画面に表示されない
-
         self.map.draw()
 
-        screen.blit(self.map.surface, (0,0), (0,0,SCR_RECT.width, SCR_RECT.height))
+        #オフセットに基づいてマップの一部を画面に描画
+        offsetx, offsety = self.map.calc_offset()
+
+        # 端ではスクロールしない
+        if offsetx < 0:
+            offsetx = 0
+        elif offsetx > self.map.width - SCR_RECT.width:
+            offsetx = self.map.width - SCR_RECT.width
+
+        if offsety < 0:
+            offsety = 0
+        elif offsety > self.map.height - SCR_RECT.height:
+            offsety = self.map.height - SCR_RECT.height
+
+        # マップの一部を画面に描画
+        screen.blit(self.map.surface, (0,0), (offsetx, offsety, SCR_RECT.width, SCR_RECT.height))
 
     def key_handler(self):
         """キー入力処理"""
@@ -144,12 +144,6 @@ class Character(pygame.sprite.Sprite):
         if not self.on_floor:
             self.fpvy += self.GRAVITY  # 下向きに重力をかける
 
-        print(self.fpvx)
-        """
-        # 浮動小数点の位置を更新
-        self.fpx += self.fpvx
-        self.fpy += self.fpvy
-        """
 
         """
         # 着地したか調べる
@@ -247,6 +241,11 @@ class Map:
         #スプライトグループの登録
         self.all = pygame.sprite.RenderUpdates()
         self.blocks = pygame.sprite.Group()
+        Character.containers = self.all
+        Block.containers = self.all, self.blocks
+
+        #プレイヤーの作成
+        self.Character = Character("hiyoco.png",(300,200),self.blocks)
 
         #マップをロードしてマップ内スプライトの作成
         self.load(filename)
@@ -262,6 +261,13 @@ class Map:
     def update(self):
         """マップ内スプライトを更新"""
         self.all.update()
+
+    def calc_offset(self):
+        """オフセットを計算"""
+        offsetx = self.Character.rect.topleft[0] - SCR_RECT.width/2
+        offsety = self.Character.rect.topleft[1] - SCR_RECT.height/2
+        print(offsetx,offsety)
+        return offsetx, offsety
 
     def load(self,filename):
         """マップをロードしてスプライトを作成"""
